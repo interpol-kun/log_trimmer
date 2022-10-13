@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use eframe::{
     egui::{self, Color32, Vec2},
     epaint::Pos2,
