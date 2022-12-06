@@ -21,7 +21,8 @@ fn filter_spawn(app: &mut MyApp) {
     let _cats_column = app.cats_column;
 
     app.thread_handle = Some(thread::spawn(move || {
-        _ = filter::filter_file(_infile, _cats, _cats_column, _outfile);
+        let result = filter::filter_file(_infile, _cats, _cats_column, _outfile);
+        result
     }));
 }
 
@@ -32,7 +33,7 @@ struct MyApp {
     outfile: String,
     is_done: bool,
     result: Result<bool, Error>,
-    thread_handle: Option<JoinHandle<()>>,
+    thread_handle: Option<JoinHandle<Result<bool, Error>>>,
 }
 
 impl MyApp {
@@ -54,7 +55,11 @@ impl eframe::App for MyApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.thread_handle.is_some() && self.thread_handle.as_ref().unwrap().is_finished() {
                 self.is_done = true;
-                self.thread_handle = None;
+
+                match self.thread_handle.take() {
+                    Some(res) => self.result = res.join().unwrap(),
+                    None => {}
+                }
             }
 
             let mut style: egui::Style = (*ctx.style()).clone();
