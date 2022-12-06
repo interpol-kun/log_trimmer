@@ -1,12 +1,29 @@
 #![windows_subsystem = "windows"]
+#![feature(is_some_with)]
 
 use eframe::{
     egui::{self, Color32, Vec2},
     epaint::Pos2,
 };
-use std::{io::Error, path::Path, process::Command};
+use std::{
+    io::Error,
+    path::Path,
+    process::Command,
+    thread::{self, JoinHandle},
+};
 
 mod filter;
+
+fn filter_spawn(app: &mut MyApp) {
+    let _infile = app.infile.to_owned();
+    let _cats = app.cats.to_owned();
+    let _outfile = app.outfile.to_owned();
+    let _cats_column = app.cats_column;
+
+    app.thread_handle = Some(thread::spawn(move || {
+        _ = filter::filter_file(_infile, _cats, _cats_column, _outfile);
+    }));
+}
 
 struct MyApp {
     infile: String,
@@ -15,6 +32,7 @@ struct MyApp {
     outfile: String,
     is_done: bool,
     result: Result<bool, Error>,
+    thread_handle: Option<JoinHandle<()>>,
 }
 
 impl MyApp {
@@ -26,6 +44,7 @@ impl MyApp {
             is_done: false,
             outfile: String::new(),
             result: Result::Ok(true),
+            thread_handle: None,
         }
     }
 }
@@ -33,6 +52,11 @@ impl MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
+            if self.thread_handle.is_some() && self.thread_handle.as_ref().unwrap().is_finished() {
+                self.is_done = true;
+                self.thread_handle = None;
+            }
+
             let mut style: egui::Style = (*ctx.style()).clone();
 
             style.spacing.item_spacing = egui::vec2(10.0, 20.0);
@@ -73,15 +97,17 @@ impl eframe::App for MyApp {
 
             if self.infile.is_empty() || self.outfile.is_empty() {
                 ui.colored_label(Color32::RED, "Files are not chosen");
+            } else if self.thread_handle.is_some()
+                && !self.thread_handle.as_ref().unwrap().is_finished()
+            {
+                ui.colored_label(Color32::LIGHT_RED, "Processing");
             } else if ui
                 .button("Trim!!!")
                 .on_hover_text("Perform the trimming operation")
                 .clicked()
             {
                 self.is_done = false;
-                self.result =
-                    filter::filter_file(&self.infile, &self.cats, self.cats_column, &self.outfile);
-                self.is_done = true;
+                filter_spawn(self);
             }
 
             match self.result {
