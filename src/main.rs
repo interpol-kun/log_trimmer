@@ -1,9 +1,8 @@
 #![windows_subsystem = "windows"]
-#![feature(is_some_with)]
 
 use eframe::{
-    egui::{self, Color32, Vec2},
-    epaint::Pos2,
+    egui::{self, Color32, FontDefinitions, Vec2},
+    epaint::{FontId, Pos2},
 };
 use std::{
     io::Error,
