@@ -34,7 +34,14 @@ where
     let mut lines = LineReader::new(File::open(file)?);
 
     while let Some(line) = lines.next_line() {
-        let line_unwrapped = str::from_utf8(line?).unwrap();
+        let line_unwrapped = match str::from_utf8(line?) {
+            Ok(ln) => ln,
+            Err(_) => {
+                println!("Error while converting the string ti utf8");
+                continue;
+            }
+        };
+
         let category = match line_unwrapped.split_whitespace().nth(cats_column) {
             Some(c) => c,
             None => continue,
