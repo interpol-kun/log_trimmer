@@ -1,8 +1,8 @@
 #![windows_subsystem = "windows"]
 
 use eframe::{
-    egui::{self, Color32, FontDefinitions, Vec2},
-    epaint::{FontId, Pos2},
+    egui::{self, Color32, Vec2},
+    epaint::Pos2,
 };
 use std::{
     io::Error,
@@ -20,8 +20,7 @@ fn filter_spawn(app: &mut MyApp) {
     let _cats_column = app.cats_column;
 
     app.thread_handle = Some(thread::spawn(move || {
-        let result = filter::filter_file(_infile, _cats, _cats_column, _outfile);
-        result
+        filter::filter_file(_infile, _cats, _cats_column, _outfile)
     }));
 }
 
@@ -55,9 +54,8 @@ impl eframe::App for MyApp {
             if self.thread_handle.is_some() && self.thread_handle.as_ref().unwrap().is_finished() {
                 self.is_done = true;
 
-                match self.thread_handle.take() {
-                    Some(res) => self.result = res.join().unwrap(),
-                    None => {}
+                if let Some(res) = self.thread_handle.take() {
+                    self.result = res.join().unwrap()
                 }
             }
 

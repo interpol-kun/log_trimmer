@@ -17,7 +17,7 @@ where
 
     let tmp = BufReader::new(File::open(cats)?)
         .lines()
-        .map(|f| f.unwrap())
+        .map(|f| f.expect("Bad string"))
         .collect::<Vec<String>>();
     tmp.par_iter()
         .map(String::as_str)
