@@ -20,4 +20,4 @@ harness = false
 html_reports = true
 
 [profile.release]
-lto = false
+lto = true

@@ -1,4 +1,4 @@
-use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     fs::{File, OpenOptions},
     io::{BufRead, BufReader, BufWriter, Error, Write},
@@ -13,15 +13,11 @@ pub fn filter_file<P>(file: P, cats: P, cats_column: usize, outfile: P) -> Resul
 where
     P: AsRef<Path>,
 {
-    let mut keywords: Vec<&str> = Vec::new();
-
-    let tmp = BufReader::new(File::open(cats)?)
+    let binding = BufReader::new(File::open(cats)?)
         .lines()
         .map(|f| f.expect("Bad string"))
         .collect::<Vec<String>>();
-    tmp.par_iter()
-        .map(String::as_str)
-        .collect_into_vec(&mut keywords);
+    let keywords: Vec<&str> = binding.par_iter().map(String::as_str).collect();
 
     let mut out_file = BufWriter::new(
         OpenOptions::new()
