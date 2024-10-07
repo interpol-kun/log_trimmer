@@ -1,3 +1,4 @@
+use compact_str::{CompactString, ToCompactString};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     fs::{File, OpenOptions},
@@ -13,11 +14,11 @@ pub fn filter_file<P>(file: P, cats: P, cats_column: usize, outfile: P) -> Resul
 where
     P: AsRef<Path>,
 {
-    let binding = BufReader::new(File::open(cats)?)
+    let keywords: Vec<CompactString> = BufReader::new(File::open(cats)?)
         .lines()
         .map(|f| f.expect("Bad string"))
-        .collect::<Vec<String>>();
-    let keywords: Vec<&str> = binding.par_iter().map(String::as_str).collect();
+        .map(|arg0: std::string::String| arg0.to_compact_string())
+        .collect();
 
     let mut out_file = BufWriter::new(
         OpenOptions::new()
@@ -43,7 +44,10 @@ where
             None => continue,
         };
 
-        if keywords.iter().all(|&key| !category.starts_with(key)) {
+        if keywords
+            .iter()
+            .all(|key| !category.starts_with(key.as_str()))
+        {
             out_file
                 .write_all(line_unwrapped.as_bytes())
                 .expect("Couldn't write to file");
